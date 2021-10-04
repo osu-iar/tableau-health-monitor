@@ -81,7 +81,8 @@ def check_node_status(node_name:str, services: dict) -> None:
             log.debug('%s: %s is disabled. Skipping', node_name, service['serviceName'])
         elif service['rollupRequestedDeploymentState'] == 'Enabled':
             if service['rollupStatus'] != 'Running':
-                log.warning('%s: %s is enabled, but has a status of %s', node_name, service['serviceName'], service['rollupStatus'])
+                log.warning('%s: %s is enabled, but has a status of %s',
+                            node_name, service['serviceName'], service['rollupStatus'])
             else:
                 log.debug('%s: %s is running as expected', node_name, service['serviceName'])
 
@@ -92,6 +93,7 @@ def check_server_status(data: dict) -> None:
 
     for node in data['clusterStatus']['nodes']:
         check_node_status(node['nodeId'], node['services'])
+
 
 if __name__ == '__main__':
     session = setup_session()
