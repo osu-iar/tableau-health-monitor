@@ -11,7 +11,7 @@ load_dotenv()
 
 # Setup Logger
 log = logging.getLogger('TableauHealthMonitor')
-log.setLevel(logging.DEBUG)
+log.setLevel(logging.INFO)
 
 logging_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
@@ -74,11 +74,24 @@ def get_server_status(session: requests.Session) -> requests.Request:
     return request
 
 
+def check_node_status(node_name:str, services: dict) -> None:
+    # this is a disabled service. We don't care.
+    for service in services:
+        if service['rollupRequestedDeploymentState'] == 'Disabled':
+            log.debug('%s: %s is disabled. Skipping', node_name, service['serviceName'])
+        elif service['rollupRequestedDeploymentState'] == 'Enabled':
+            if service['rollupStatus'] != 'Running':
+                log.warning('%s: %s is enabled, but has a status of %s', node_name, service['serviceName'], service['rollupStatus'])
+            else:
+                log.debug('%s: %s is running as expected', node_name, service['serviceName'])
+
+
 def check_server_status(data: dict) -> None:
     if data['clusterStatus']['rollupStatus'] == 'Running':
         log.info('Rollup status: Running')
-        sys.exit(0)
 
+    for node in data['clusterStatus']['nodes']:
+        check_node_status(node['nodeId'], node['services'])
 
 if __name__ == '__main__':
     session = setup_session()
