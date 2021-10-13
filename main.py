@@ -1,5 +1,4 @@
 import requests
-import pymsteams
 import json
 import os
 import sys
@@ -21,12 +20,15 @@ ch.setFormatter(logging_format)
 fh = logging.FileHandler(filename='tabhealth.log', mode='a', encoding='utf-8')
 fh.setFormatter(logging_format)
 
-log.addHandler(ch)
-log.addHandler(fh)
+if os.getenv('tabhealth_console_logging'):
+    log.addHandler(ch)
+
+if os.getenv('tabhealth_file_logging'):
+    log.addHandler(fh)
 
 TABLEAU_URL = 'https://tableau-test-01.iar.oregonstate.edu'
-TSM_PORT    = '8850'
-BASE_URL    = f'{TABLEAU_URL}:{TSM_PORT}/api/0.5'
+TSM_PORT = '8850'
+BASE_URL = f'{TABLEAU_URL}:{TSM_PORT}/api/0.5'
 
 HEADERS = {
     'content-type': 'application/json'
@@ -38,6 +40,8 @@ AUTH_PAYLOAD = {
         , 'password': os.getenv('tabhealth_password')
     }
 }
+
+EXIT_STATUS = 0
 
 
 def setup_session() -> requests.Session:
@@ -74,25 +78,34 @@ def get_server_status(session: requests.Session) -> requests.Request:
     return request
 
 
-def check_node_status(node_name:str, services: dict) -> None:
-    # this is a disabled service. We don't care.
+def check_node_status(node_name: str, services: dict) -> None:
+    num_problems = 0
+
     for service in services:
         if service['rollupRequestedDeploymentState'] == 'Disabled':
-            log.debug('%s: %s is disabled. Skipping', node_name, service['serviceName'])
+            log.info('%s: %s is disabled. Skipping', node_name, service['serviceName'])
         elif service['rollupRequestedDeploymentState'] == 'Enabled':
             if service['rollupStatus'] != 'Running':
-                log.warning('%s: %s is enabled, but has a status of %s',
-                            node_name, service['serviceName'], service['rollupStatus'])
+                log.critical('%s: %s is enabled, but has a status of %s',
+                             node_name, service['serviceName'], service['rollupStatus'])
+                num_problems += 1
             else:
-                log.debug('%s: %s is running as expected', node_name, service['serviceName'])
+                log.info('%s: %s is running as expected', node_name, service['serviceName'])
+
+    return num_problems
 
 
-def check_server_status(data: dict) -> None:
+def check_server_status(data: dict) -> int:
+    num_problems = 0
+
     if data['clusterStatus']['rollupStatus'] == 'Running':
         log.info('Rollup status: Running')
+        return num_problems
+    else:
+        for node in data['clusterStatus']['nodes']:
+            num_problems += check_node_status(node['nodeId'], node['services'])
 
-    for node in data['clusterStatus']['nodes']:
-        check_node_status(node['nodeId'], node['services'])
+        return num_problems
 
 
 if __name__ == '__main__':
@@ -102,5 +115,7 @@ if __name__ == '__main__':
 
     server_status: requests.Request = get_server_status(session)
 
-    check_server_status(server_status.json())
+    exit_status = check_server_status(server_status.json())
     logout_of_api(session)
+
+    sys.exit(exit_status)
