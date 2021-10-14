@@ -26,8 +26,8 @@ if os.getenv('tabhealth_console_logging'):
 if os.getenv('tabhealth_file_logging'):
     log.addHandler(fh)
 
-TABLEAU_URL = 'https://tableau-test-01.iar.oregonstate.edu'
-TSM_PORT = '8850'
+TABLEAU_URL = os.getenv('tabhealth_server')
+TSM_PORT = os.getenv('tabhealth_port')
 BASE_URL = f'{TABLEAU_URL}:{TSM_PORT}/api/0.5'
 
 HEADERS = {

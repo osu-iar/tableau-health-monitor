@@ -1,6 +1,6 @@
 # Tableau Health Monitor
 
-Simple overview of use/purpose.
+A simple script intended to log the state of our Tableau Server cluster.
 
 ## Description
 
@@ -10,7 +10,8 @@ An in-depth paragraph about your project and overview of use.
 
 ### Dependencies
 
-Dependencies for this project can be found in the `requirements.txt` file. Install using pip as normal.
+1. Edit the Windows Firewall on the primary node of your Tableau Server cluster to allow for connections on the TSM port to the computer hosting this script.
+2. Python dependencies for this project can be found in the `requirements.txt` file. Install using pip as normal.
 
 ```
 pip install -r requirements.txt
@@ -21,6 +22,8 @@ pip install -r requirements.txt
 Configuration for this script is done via environment variables. You can set these through your OS, scheduler, or a `.env` file. These variables are loaded via the library, python-dotenv.
 
 ```
+tabhealth_server=
+tabhealth_port=
 tabhealth_username=
 tabhealth_password=
 tabhealth_console_logging=true
