@@ -21,8 +21,10 @@ pip install -r requirements.txt
 
 Configuration for this script is done via environment variables. You can set these through your OS, scheduler, or a `.env` file. These variables are loaded via the library, python-dotenv.
 
+The value of `tabhealth_server` needs to start with `https://`. Otherwise, the requests library will throw a `requests.exceptions.InvalidSchema` exception.
+
 ```
-tabhealth_server=
+tabhealth_server=https://
 tabhealth_port=
 tabhealth_username=
 tabhealth_password=
