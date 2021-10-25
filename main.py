@@ -57,9 +57,13 @@ def setup_session() -> requests.Session:
 
 
 def login_to_api(session: requests.Session) -> None:
-    request = session.post(url=f'{BASE_URL}/login', data=json.dumps(AUTH_PAYLOAD), headers=HEADERS)
-    if request.status_code != 204:
-        log.critical('Could not login to TSM API. Login Status: %s', request.status_code)
+    try:
+        request = session.post(url=f'{BASE_URL}/login', data=json.dumps(AUTH_PAYLOAD), headers=HEADERS)
+        if request.status_code != 204:
+            log.critical('Could not login to TSM API. Login Status: %s', request.status_code)
+            sys.exit(1)
+    except requests.exceptions.InvalidSchema:
+        log.critical('Could not determine the web protocal to use. Double check that you included https://.')
         sys.exit(1)
 
 
