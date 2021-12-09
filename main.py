@@ -3,10 +3,32 @@ import json
 import os
 import sys
 import logging
+import time
+import argparse
 
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# Set up argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("-l", "--license", help="Use the license argument to check license expiry status.", action="store_true")
+parser.add_argument("-v", "--verbose", help="Report all license expiry dates (must use license arg as well)", action="store_true")
+args = parser.parse_args()
+
+# default (no arg)
+healthFlag = True
+licenseFlag = False
+verboseFlag = False
+
+# set flags based on args
+if args.license:
+    healthFlag = False
+    licenseFlag = True
+    if args.verbose:
+        verboseFlag = True
+
+
 
 # Setup Logger
 log = logging.getLogger('TableauHealthMonitor')
@@ -73,6 +95,30 @@ def logout_of_api(session: requests.Session) -> None:
         log.warning('Could not logout of TSM API. Logout Status: %s', request.status_code)
 
 
+def get_license_info(session: requests.Session) -> dict:
+    response = session.get(url=f"{BASE_URL}/licensing/productKeys")
+    licenses = response.json()
+    return licenses
+
+
+def parse_license_info(licenses: dict) -> int:
+    current_unix = int(time.time()) + 14400  # current time UNIX, add offset for ZULU
+    for item in licenses['productKeys']['items']:
+        if verboseFlag:
+            log.info("[VERBOSE] License: " + item['serial'])
+            log.info("[VERBOSE] Expires: " + item['expiration'])
+        strippedDate = str(item['expiration'][0:10])
+
+        if strippedDate != "permanent":
+            expiry_time_unix = time.mktime(time.strptime(strippedDate, '%Y-%m-%d')) + 14400  # expiry time UNIX + offset
+            if expiry_time_unix - current_unix < 2417600:
+                log.warning("License " + item['serial'] + " expires in less than 1 month. (Expires " + item
+                ['expiration'] + ")")
+            else:
+                log.info("License Status: no licenses expire within 1 month.")
+    return 0
+
+
 def get_server_status(session: requests.Session) -> requests.Request:
     request = session.get(url=f"{BASE_URL}/status")
     if request.status_code != 200:
@@ -117,9 +163,13 @@ if __name__ == '__main__':
 
     login_to_api(session)
 
-    server_status: requests.Request = get_server_status(session)
+    if licenseFlag:
+        licenses = get_license_info(session)
+        exit_status = parse_license_info(licenses)
 
-    exit_status = check_server_status(server_status.json())
+    if healthFlag:
+        server_status: requests.Request = get_server_status(session)
+        exit_status = check_server_status(server_status.json())
+
     logout_of_api(session)
-
     sys.exit(exit_status)

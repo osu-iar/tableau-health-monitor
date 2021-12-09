@@ -41,12 +41,22 @@ This will automatically grant the user access to the TSM interface. No restart i
 
 ### Executing program
 
-Simply execute the file, `main.py`.
+Health check: Simply execute the file, `main.py`.
 
 ```
 python main.py
 ```
+To check license expiry: `main.py -l`
 
+```
+python main.py -l
+```
+
+To check license expiry and receive information about all current licenses: `main.py -l -v`
+
+```
+python main.py -l -v
+```
 ## Help
 
 ## Authors
