@@ -61,7 +61,6 @@ def setup_parser() -> argparse.ArgumentParser:
         , help="Use the license argument to check license expiry status."
         , choices=['license', 'health']
         , default='health'
-        # , action="store"
         , nargs='?'
     )
 
