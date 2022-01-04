@@ -10,19 +10,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Set up argparse
-parser = argparse.ArgumentParser()
-parser.set_defaults(healthFlag=True, licenseFlag=False, verboseFlag=False)
-parser.add_argument("-v", "--verboseFlag", help="Report all license expiry dates (must use license arg as well)", action="store_true")
-group = parser.add_mutually_exclusive_group()
-group.add_argument("-l", "--licenseFlag", help="Use the license argument to check license expiry status.", action="store_true")
-group.add_argument("--health", "--healthFlag", help="Health check", action="store_true")
-args = parser.parse_args()
-
-if args.licenseFlag:
-    args.healthFlag = False
-
-
 # Set up Logger
 log = logging.getLogger('TableauHealthMonitor')
 log.setLevel(logging.INFO)
@@ -58,6 +45,27 @@ AUTH_PAYLOAD = {
 
 EXIT_STATUS = 0
 
+
+def setup_parser() -> argparse.ArgumentParser:
+    # Set up argparse
+    parser = argparse.ArgumentParser()
+    # parser.set_defaults(healthFlag=True, licenseFlag=False, verboseFlag=False)
+    parser.add_argument("-v", "--verbose", help="Report all license expiry dates (must use license arg as well)",
+                        action="store_true")
+
+    # group = parser.add_mutually_exclusive_group()
+    parser.add_argument(
+        "command"
+        , help="Use the license argument to check license expiry status."
+        , choices=['license', 'health']
+        , default='health'
+        # , action="store"
+        , nargs='?'
+    )
+
+    return parser
+
+
 def setup_session() -> requests.Session:
     # Disable the SSL checking as Tableau uses a self-signed cert
     # and it's not important enough to do anything about it here
@@ -87,16 +95,17 @@ def logout_of_api(session: requests.Session) -> None:
         log.warning('Could not logout of TSM API. Logout Status: %s', request.status_code)
 
 
-
 if __name__ == '__main__':
+    parser = setup_parser()
+    args = parser.parse_args()
+
     session = setup_session()
     login_to_api(session)
 
-    if args.licenseFlag:
+    if args.command == 'license':
         licenses = license_check.get_license_info(BASE_URL, session)
         exit_status = license_check.parse_license_info(args.verboseFlag, licenses)
-
-    if args.healthFlag:
+    elif args.command == 'health':
         server_status: requests.Request = status_check.get_server_status(BASE_URL, session)
         exit_status = status_check.check_server_status(server_status.json())
 
