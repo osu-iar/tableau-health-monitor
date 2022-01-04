@@ -106,7 +106,7 @@ if __name__ == '__main__':
 
     if args.command == 'license':
         licenses = license_check.get_license_info(BASE_URL, session)
-        exit_status = license_check.parse_license_info(args.verboseFlag, licenses)
+        exit_status = license_check.parse_license_info(args.verbose, licenses)
     elif args.command == 'health':
         server_status: requests.Request = status_check.get_server_status(BASE_URL, session)
         exit_status = status_check.check_server_status(server_status.json())
