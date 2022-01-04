@@ -3,12 +3,14 @@ import json
 import os
 import sys
 import logging
-
+import argparse
+import license_check
+import status_check
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Setup Logger
+# Set up Logger
 log = logging.getLogger('TableauHealthMonitor')
 log.setLevel(logging.INFO)
 
@@ -44,6 +46,27 @@ AUTH_PAYLOAD = {
 EXIT_STATUS = 0
 
 
+def setup_parser() -> argparse.ArgumentParser:
+    # Set up argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-v"
+        , "--verbose"
+        , help="Report all license expiry dates (must use license arg as well)"
+        , action="store_true"
+    )
+
+    parser.add_argument(
+        "command"
+        , help="Use the license argument to check license expiry status."
+        , choices=['license', 'health']
+        , default='health'
+        , nargs='?'
+    )
+
+    return parser
+
+
 def setup_session() -> requests.Session:
     # Disable the SSL checking as Tableau uses a self-signed cert
     # and it's not important enough to do anything about it here
@@ -73,53 +96,19 @@ def logout_of_api(session: requests.Session) -> None:
         log.warning('Could not logout of TSM API. Logout Status: %s', request.status_code)
 
 
-def get_server_status(session: requests.Session) -> requests.Request:
-    request = session.get(url=f"{BASE_URL}/status")
-    if request.status_code != 200:
-        log.critical('Could not retrieve server status. Status Code: %s', request.status_code)
-        sys.exit(1)
-
-    return request
-
-
-def check_node_status(node_name: str, services: dict) -> None:
-    num_problems = 0
-
-    for service in services:
-        if service['rollupRequestedDeploymentState'] == 'Disabled':
-            log.info('%s: %s is disabled. Skipping', node_name, service['serviceName'])
-        elif service['rollupRequestedDeploymentState'] == 'Enabled':
-            if service['rollupStatus'] != 'Running':
-                log.critical('%s: %s is enabled, but has a status of %s',
-                             node_name, service['serviceName'], service['rollupStatus'])
-                num_problems += 1
-            else:
-                log.info('%s: %s is running as expected', node_name, service['serviceName'])
-
-    return num_problems
-
-
-def check_server_status(data: dict) -> int:
-    num_problems = 0
-
-    if data['clusterStatus']['rollupStatus'] == 'Running':
-        log.info('Rollup status: Running')
-        return num_problems
-    else:
-        for node in data['clusterStatus']['nodes']:
-            num_problems += check_node_status(node['nodeId'], node['services'])
-
-        return num_problems
-
-
 if __name__ == '__main__':
-    session = setup_session()
+    parser = setup_parser()
+    args = parser.parse_args()
 
+    session = setup_session()
     login_to_api(session)
 
-    server_status: requests.Request = get_server_status(session)
+    if args.command == 'license':
+        licenses = license_check.get_license_info(BASE_URL, session)
+        exit_status = license_check.parse_license_info(args.verbose, licenses)
+    elif args.command == 'health':
+        server_status: requests.Request = status_check.get_server_status(BASE_URL, session)
+        exit_status = status_check.check_server_status(server_status.json())
 
-    exit_status = check_server_status(server_status.json())
     logout_of_api(session)
-
     sys.exit(exit_status)
