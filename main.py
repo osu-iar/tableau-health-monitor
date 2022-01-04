@@ -49,11 +49,13 @@ EXIT_STATUS = 0
 def setup_parser() -> argparse.ArgumentParser:
     # Set up argparse
     parser = argparse.ArgumentParser()
-    # parser.set_defaults(healthFlag=True, licenseFlag=False, verboseFlag=False)
-    parser.add_argument("-v", "--verbose", help="Report all license expiry dates (must use license arg as well)",
-                        action="store_true")
+    parser.add_argument(
+        "-v"
+        , "--verbose"
+        , help="Report all license expiry dates (must use license arg as well)"
+        , action="store_true"
+    )
 
-    # group = parser.add_mutually_exclusive_group()
     parser.add_argument(
         "command"
         , help="Use the license argument to check license expiry status."
