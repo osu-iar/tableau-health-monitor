@@ -35,7 +35,7 @@ tabhealth_file_logging=true
 
 ### Windows Configuration
 
-TSM users are members of either the VM's local `Administrators` or `tsmadmins` group. Running this script with credentials for a VM credentials **is not advised**. The latter option, `tsmadmins` does not exist by default. If you haven't done so already, create this group using `lusrmgr.msc` and add your AD member to it.
+TSM users are members of either the VM's local `Administrators` or `tsmadmins` group. Running this script with credentials for a VM administrator **is not advised**. I recommend creating a service user (either AD or local) and placing that within the `tsmadmins` group. This group does not exist by default, so if you haven't created one already, do so using `lusrmgr.msc` and add your user to it.
 
 This will automatically grant the user access to the TSM interface. No restart is necessary.
 
