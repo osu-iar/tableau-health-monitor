@@ -12,7 +12,7 @@ An in-depth paragraph about your project and overview of use.
 
 1. Edit the Windows Firewall on the primary node of your Tableau Server cluster to allow for connections on the TSM port to the computer hosting this script.
 2. Python dependencies for this project can be found in the `requirements.txt` file. Install using pip as normal.
-3. An AD member in the group, `tsmadmins`. See the secion, _Windows Configuration_.
+3. An AD member or local user in the group, `tsmadmins`. See the secion, _Windows Configuration_.
 
 ```
 pip install -r requirements.txt
