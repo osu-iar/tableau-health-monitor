@@ -1,3 +1,7 @@
+# Deprecation Notice
+
+As we are no longer managing a Tableau Server instance, we will no longer be maintaining this repo. We are leaving the repo here in case it can be of further use to someone else, but will not be accepting PRs. Please feel free to fork the repo if you'd like to build on it.
+
 # Tableau Health Monitor
 
 A simple script intended to log the state of our Tableau Server cluster.
